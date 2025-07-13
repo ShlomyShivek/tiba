@@ -1,18 +1,13 @@
 using Microsoft.Extensions.Logging;
 using tiba.rest.messaging;
-using tiba.rest.model;
+using backend_service.dal;
 
-namespace backend_service;
+namespace backend_service.handlers;
 
-public class CreateTodoHandler
+public class CreateTodoHandler : BaseTodoHandler
 {
-    private readonly ILogger<TodoWorker> _logger;
-    private readonly ITodoRepository _todoRepository;
-
-    public CreateTodoHandler(ILogger<TodoWorker> logger, ITodoRepository todoRepository)
+    public CreateTodoHandler(ILogger<TodoWorker> logger, ITodoRepository todoRepository) : base(logger, todoRepository)
     {
-        _logger = logger;
-        _todoRepository = todoRepository;
     }
 
     public async Task<CreateTodoResponse> HandleAsync(CreateTodoRequest message)
@@ -22,7 +17,7 @@ public class CreateTodoHandler
         try
         {
             var createdTodo = await _todoRepository.CreateTodoAsync(message.Todo);
-            
+
             return new CreateTodoResponse
             {
                 CreatedTodo = createdTodo,

@@ -1,6 +1,6 @@
 using tiba.rest.model;
 
-namespace backend_service;
+namespace backend_service.dal;
 
 public interface ITodoRepository
 {

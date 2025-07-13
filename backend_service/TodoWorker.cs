@@ -6,6 +6,8 @@ using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
 using tiba.rest.messaging;
+using backend_service.handlers;
+using backend_service.dal;
 
 namespace backend_service;
 
