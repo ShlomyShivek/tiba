@@ -1,0 +1,68 @@
+###
+# Tiba Todo API Testing
+# Make sure both backend_service and rest_service are running
+###
+
+@baseUrl = http://localhost:5000
+@jwt = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwidXNlcklkIjoiMSIsIm5hbWUiOiJKb2huIERvZSIsImlhdCI6MTUxNjIzOTAyMn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+### Get all todos for authenticated user
+GET {{baseUrl}}/todos
+Authorization: Bearer {{jwt}}
+
+### Create a new todo
+POST {{baseUrl}}/todos
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{
+  "title": "Learn RabbitMQ",
+  "isCompleted": false
+}
+
+### Create another todo
+POST {{baseUrl}}/todos
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{
+  "title": "Build microservices",
+  "isCompleted": true
+}
+
+### Test without authorization (should return 401)
+GET {{baseUrl}}/todos
+
+### Test with invalid token (should return 401)
+GET {{baseUrl}}/todos
+Authorization: Bearer invalid-token
+
+### Create todo without authorization (should return 401)
+POST {{baseUrl}}/todos
+Content-Type: application/json
+
+{
+  "title": "This should fail",
+  "isCompleted": false
+}
+
+### Create todo with invalid JSON (should return 400)
+POST {{baseUrl}}/todos
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{
+  "title": "Missing comma"
+  "isCompleted": false
+}
+
+###
+# JWT Token Notes:
+# The token above contains these claims:
+# - sub: "1234567890" 
+# - userId: "1"
+# - name: "John Doe"
+# 
+# The MockAuthService will extract userId=1 from this token.
+# You can create custom tokens at https://jwt.io/ with different userIds.
+###

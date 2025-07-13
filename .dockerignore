@@ -1,0 +1,34 @@
+# .NET build artifacts
+**/bin/
+**/obj/
+**/out/
+
+# IDE files
+.vscode/
+.vs/
+*.user
+*.suo
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Documentation
+*.md
+*.txt
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+**/tmp/
+**/temp/
