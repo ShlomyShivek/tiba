@@ -6,6 +6,7 @@ using System.Text;
 using Tiba.Rest.Exceptions;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.JsonWebTokens;
+using Tiba.Rest.Extentions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,7 +36,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services
+    .AddAuthorization()
+    .AddExceptionHandling();
 
 var app = builder.Build();
 
@@ -62,8 +65,7 @@ app.UseAuthorization();
 
 app.MapGet("/todos", async (ITodoService todoService, IAuthService authService, HttpContext context) =>
 {
-    try
-    {
+
         // Use the authService to get the user ID from the context
         var userId = authService.TryGetUserIdFromAuth(context);
         if (userId <= 0)
@@ -72,12 +74,6 @@ app.MapGet("/todos", async (ITodoService todoService, IAuthService authService, 
         }
         var todos = await todoService.GetTodosByUserIdAsync(userId);
         return Results.Ok(todos);
-    }
-    catch (UnauthorizedException ex)
-    {
-        Console.WriteLine($"Unauthorized access: {ex.Message}");
-        return Results.Unauthorized();
-    }
 })
 .WithName("GetTodos")
 .WithOpenApi()
@@ -85,8 +81,6 @@ app.MapGet("/todos", async (ITodoService todoService, IAuthService authService, 
 
 app.MapPost("/todos", async (Todo todo, ITodoService todoService, IAuthService authService, HttpContext context) =>
 {
-    try
-    {
         // Use the authService to get the user ID from the context
         var userId = authService.TryGetUserIdFromAuth(context);
         if (userId <= 0)
@@ -96,12 +90,6 @@ app.MapPost("/todos", async (Todo todo, ITodoService todoService, IAuthService a
         todo.UserId = userId;
         var createdTodo = await todoService.CreateTodoAsync(todo);
         return Results.Created($"/todos/{createdTodo.Id}", createdTodo);
-    }
-    catch (UnauthorizedException ex)
-    {
-        Console.WriteLine($"Unauthorized access: {ex.Message}");
-        return Results.Unauthorized();
-    }
 })
 .WithName("InsertTodo")
 .WithOpenApi()
