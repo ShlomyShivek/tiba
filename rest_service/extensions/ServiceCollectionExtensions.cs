@@ -22,6 +22,7 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddHealthCheck(this IServiceCollection services)
     {
+        //TOOD: change to actual health checks
         services.AddHealthChecks()
             .AddCheck("api", () => HealthCheckResult.Healthy("API is running"))
             .AddCheck("database", () => HealthCheckResult.Healthy("Database connection is healthy"));

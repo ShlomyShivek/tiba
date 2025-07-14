@@ -115,13 +115,12 @@ Use the `app.http` file with provided JWT tokens for API testing.
 1. **Logging**: Change console to structured logging with file output
 2. **Authorization**: Implement real JWT validation and user service
 3. **Unit Tests**: Add comprehensive test coverage
+4. **Healthcheck**: Implement real healthcheck
 
 ### Medium Priority
 4. **Shared Library**: Consider moving to separate NuGet package
 5. **Model Separation**: Create separate REST API models with mapping
 6. **Build Warnings**: Address all compiler warnings
-11. **Namespaces**: Standardize to capital letter conventions
-12. **Health Checks**: Add health check endpoints to REST service
 
 ### Architecture Improvements
 - Separate models for API and messaging layers
