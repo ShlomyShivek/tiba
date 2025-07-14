@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Tiba.Shared.Messaging;
-using BackendService.Dal;
+using Tiba.BackendService.Dal;
 
-namespace BackendService.Handlers;
+namespace Tiba.BackendService.Handlers;
 
 public class GetTodosHandler : BaseTodoHandler
 {

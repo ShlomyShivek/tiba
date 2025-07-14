@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
-using BackendService.Dal;
+using Tiba.BackendService.Dal;
 
-namespace BackendService.Handlers;
+namespace Tiba.BackendService.Handlers;
 
 public abstract class BaseTodoHandler
 {

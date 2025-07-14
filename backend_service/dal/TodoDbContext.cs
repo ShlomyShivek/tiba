@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Tiba.Shared.Model;
 
-namespace BackendService.Dal;
+namespace Tiba.BackendService.Dal;
 
 public class TodoDbContext : DbContext
 {

@@ -1,9 +1,9 @@
-﻿using BackendService;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using BackendService.Dal;
+using Tiba.BackendService;
+using Tiba.BackendService.Dal;
 
 var builder = Host.CreateApplicationBuilder(args);
 
