@@ -7,30 +7,17 @@ using Tiba.Rest.Extentions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<IRabbitMqClient, RabbitMqClient>();
-builder.Services.AddSingleton<ITodoService, TodoService>();
-builder.Services.AddSingleton<IAuthService, MockAuthService>();
-
 builder.Services
+    .AddEndpointsApiExplorer()
+    .AddSwaggerGen()
+    .AddApplicationServices()
     .AddJwtAuthentication()
     .AddAuthorization()
     .AddExceptionHandling();
 
-var app = builder.Build();
+var app = builder.Build()
+    .AddGenericExceptionHandling();
 
-app.UseExceptionHandler(appError =>
-{
-    appError.Run(async context =>
-    {
-        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        context.Response.ContentType = "application/json";
-
-        var response = new { message = "An internal server error occurred." };
-        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
-    });
-});
 
 if (app.Environment.IsDevelopment())
 {
@@ -44,14 +31,14 @@ app.UseAuthorization();
 app.MapGet("/todos", async (ITodoService todoService, IAuthService authService, HttpContext context) =>
 {
 
-        // Use the authService to get the user ID from the context
-        var userId = authService.TryGetUserIdFromAuth(context);
-        if (userId <= 0)
-        {
-            return Results.Unauthorized();
-        }
-        var todos = await todoService.GetTodosByUserIdAsync(userId);
-        return Results.Ok(todos);
+    // Use the authService to get the user ID from the context
+    var userId = authService.TryGetUserIdFromAuth(context);
+    if (userId <= 0)
+    {
+        return Results.Unauthorized();
+    }
+    var todos = await todoService.GetTodosByUserIdAsync(userId);
+    return Results.Ok(todos);
 })
 .WithName("GetTodos")
 .WithOpenApi()
@@ -59,15 +46,15 @@ app.MapGet("/todos", async (ITodoService todoService, IAuthService authService, 
 
 app.MapPost("/todos", async (Todo todo, ITodoService todoService, IAuthService authService, HttpContext context) =>
 {
-        // Use the authService to get the user ID from the context
-        var userId = authService.TryGetUserIdFromAuth(context);
-        if (userId <= 0)
-        {
-            return Results.Unauthorized();
-        }
-        todo.UserId = userId;
-        var createdTodo = await todoService.CreateTodoAsync(todo);
-        return Results.Created($"/todos/{createdTodo.Id}", createdTodo);
+    // Use the authService to get the user ID from the context
+    var userId = authService.TryGetUserIdFromAuth(context);
+    if (userId <= 0)
+    {
+        return Results.Unauthorized();
+    }
+    todo.UserId = userId;
+    var createdTodo = await todoService.CreateTodoAsync(todo);
+    return Results.Created($"/todos/{createdTodo.Id}", createdTodo);
 })
 .WithName("InsertTodo")
 .WithOpenApi()

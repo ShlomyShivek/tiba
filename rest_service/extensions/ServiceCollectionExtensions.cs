@@ -2,11 +2,22 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Tiba.Rest.Exceptions;
+using Tiba.Rest.Services;
 
 namespace Tiba.Rest.Extentions;
 
 public static class ServiceCollectionExtensions
 {
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    {
+        services.AddSingleton<IRabbitMqClient, RabbitMqClient>();
+        services.AddSingleton<ITodoService, TodoService>();
+        services.AddSingleton<IAuthService, MockAuthService>();
+
+        return services;
+
+    }
+
     public static IServiceCollection AddJwtAuthentication(this IServiceCollection services)
     {
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
