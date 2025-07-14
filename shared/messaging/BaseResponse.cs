@@ -1,4 +1,4 @@
-namespace tiba.rest.messaging;
+namespace Tiba.Shared.Messaging;
 
 public abstract class BaseResponse
 {

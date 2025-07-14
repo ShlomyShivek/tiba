@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using tiba.rest.model;
+using Tiba.Shared.Model;
 
-namespace backend_service.dal;
+namespace BackendService.Dal;
 
 public class TodoRepository : ITodoRepository
 {

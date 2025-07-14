@@ -1,6 +1,6 @@
 using System;
 
-namespace tiba.rest.exceptions;
+namespace Tiba.Rest.Exceptions;
 
 public class UnauthorizedException:Exception
 {

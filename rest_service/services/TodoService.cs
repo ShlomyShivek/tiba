@@ -1,7 +1,7 @@
-using tiba.rest.model;
-using tiba.rest.messaging;
+using Tiba.Shared.Model;
+using Tiba.Shared.Messaging;
 
-namespace tiba.rest.services;
+namespace Tiba.Rest.Services;
 
 public class TodoService : ITodoService
 {

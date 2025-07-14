@@ -1,4 +1,4 @@
-namespace tiba.rest.model;
+namespace Tiba.Shared.Model;
 
 public class User
 {

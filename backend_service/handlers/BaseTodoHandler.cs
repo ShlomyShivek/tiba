@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
-using backend_service.dal;
+using BackendService.Dal;
 
-namespace backend_service.handlers;
+namespace BackendService.Handlers;
 
 public abstract class BaseTodoHandler
 {

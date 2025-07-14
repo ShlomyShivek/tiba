@@ -1,4 +1,4 @@
-namespace tiba.rest.services;
+namespace Tiba.Rest.Services;
 
 public interface IAuthService
 {

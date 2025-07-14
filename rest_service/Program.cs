@@ -1,9 +1,9 @@
-using tiba.rest.model;
-using tiba.rest.services;
+using Tiba.Shared.Model;
+using Tiba.Rest.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using tiba.rest.exceptions;
+using Tiba.Rest.Exceptions;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.JsonWebTokens;
 

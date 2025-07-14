@@ -1,9 +1,9 @@
-﻿using backend_service;
+﻿using BackendService;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using backend_service.dal;
+using BackendService.Dal;
 
 var builder = Host.CreateApplicationBuilder(args);
 

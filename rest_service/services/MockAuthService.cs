@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
-using tiba.rest.exceptions;
+using Tiba.Rest.Exceptions;
 
-namespace tiba.rest.services;
+namespace Tiba.Rest.Services;
 
 public class MockAuthService : IAuthService
 {

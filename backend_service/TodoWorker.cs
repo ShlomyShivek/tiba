@@ -5,11 +5,11 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
-using tiba.rest.messaging;
-using backend_service.handlers;
-using backend_service.dal;
+using Tiba.Shared.Messaging;
+using BackendService.Handlers;
+using BackendService.Dal;
 
-namespace backend_service;
+namespace BackendService;
 
 public class TodoWorker : BackgroundService
 {

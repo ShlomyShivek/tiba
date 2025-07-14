@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 
-namespace tiba.rest.services;
+namespace Tiba.Rest.Services;
 
 public class RabbitMqClient : IRabbitMqClient, IDisposable
 {

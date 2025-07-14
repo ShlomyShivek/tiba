@@ -1,6 +1,6 @@
-using tiba.rest.model;
+using Tiba.Shared.Model;
 
-namespace tiba.rest.services;
+namespace Tiba.Rest.Services;
 
 public interface ITodoService
 {

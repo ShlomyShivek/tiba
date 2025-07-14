@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
-using tiba.rest.messaging;
-using backend_service.dal;
+using Tiba.Shared.Messaging;
+using BackendService.Dal;
 
-namespace backend_service.handlers;
+namespace BackendService.Handlers;
 
 public class CreateTodoHandler : BaseTodoHandler
 {

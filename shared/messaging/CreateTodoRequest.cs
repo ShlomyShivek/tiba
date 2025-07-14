@@ -1,6 +1,6 @@
-using tiba.rest.model;
+using Tiba.Shared.Model;
 
-namespace tiba.rest.messaging;
+namespace Tiba.Shared.Messaging;
 
 public class CreateTodoRequest
 {
