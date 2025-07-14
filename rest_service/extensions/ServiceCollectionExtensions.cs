@@ -1,9 +1,36 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
 using Tiba.Rest.Exceptions;
 
 namespace Tiba.Rest.Extentions;
 
 public static class ServiceCollectionExtensions
 {
+    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services)
+    {
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                //TODO: this is a mock implementation, replace with actual JWT validation logic
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = false,
+                    ValidateIssuerSigningKey = false,
+                    RequireExpirationTime = false,
+                    SignatureValidator = (token, parameters) =>
+                    {
+                        // Custom signature validation logic can be added here if needed
+                        return new JsonWebToken(token);
+                    },
+                    ClockSkew = TimeSpan.Zero // Remove default 5-minute tolerance for token expiration timing
+                };
+            });
+        return services;
+    }
+
     public static IServiceCollection AddExceptionHandling(this IServiceCollection services)
     {
         services.AddProblemDetails();

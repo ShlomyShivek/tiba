@@ -1,11 +1,8 @@
 using Tiba.Shared.Model;
 using Tiba.Rest.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Tiba.Rest.Exceptions;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Tiba.Rest.Extentions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,27 +13,8 @@ builder.Services.AddSingleton<IRabbitMqClient, RabbitMqClient>();
 builder.Services.AddSingleton<ITodoService, TodoService>();
 builder.Services.AddSingleton<IAuthService, MockAuthService>();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        //TODO: this is a mock implementation, replace with actual JWT validation logic
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = false,
-            ValidateIssuerSigningKey = false,
-            RequireExpirationTime = false,
-            SignatureValidator = (token, parameters) =>
-            {
-                // Custom signature validation logic can be added here if needed
-                return new JsonWebToken(token);
-            },
-            ClockSkew = TimeSpan.Zero // Remove default 5-minute tolerance for token expiration timing
-        };
-    });
-
 builder.Services
+    .AddJwtAuthentication()
     .AddAuthorization()
     .AddExceptionHandling();
 
