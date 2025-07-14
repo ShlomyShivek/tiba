@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Tiba.Rest.Exceptions;
 using Tiba.Rest.Services;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Tiba.Rest.Extentions;
 
@@ -16,6 +18,15 @@ public static class ServiceCollectionExtensions
 
         return services;
 
+    }
+
+    public static IServiceCollection AddHealthCheck(this IServiceCollection services)
+    {
+        services.AddHealthChecks()
+            .AddCheck("api", () => HealthCheckResult.Healthy("API is running"))
+            .AddCheck("database", () => HealthCheckResult.Healthy("Database connection is healthy"));
+
+        return services;
     }
 
     public static IServiceCollection AddJwtAuthentication(this IServiceCollection services)

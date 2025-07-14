@@ -1,9 +1,9 @@
 using Tiba.Shared.Model;
 using Tiba.Rest.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Tiba.Rest.Exceptions;
 using Tiba.Rest.Extentions;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +13,8 @@ builder.Services
     .AddApplicationServices()
     .AddJwtAuthentication()
     .AddAuthorization()
-    .AddExceptionHandling();
+    .AddExceptionHandling()
+    .AddHealthCheck();
 
 var app = builder.Build()
     .AddGenericExceptionHandling();
@@ -27,6 +28,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Health check endpoint
+app.MapHealthChecks("/health");
 
 app.MapGet("/todos", async (ITodoService todoService, IAuthService authService, HttpContext context) =>
 {
