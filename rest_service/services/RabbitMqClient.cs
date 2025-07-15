@@ -25,11 +25,13 @@ public class RabbitMqClient : IRabbitMqClient, IDisposable
         _connection = factory.CreateConnection();
         _channel = _connection.CreateModel();
         
+        //using direct reply-to pattern https://www.rabbitmq.com/docs/direct-reply-to
         _replyQueueName = "amq.rabbitmq.reply-to";
         
         var consumer = new EventingBasicConsumer(_channel);
         consumer.Received += (model, ea) =>
         {
+            Console.WriteLine($"Received response for correlation ID: {ea.BasicProperties.CorrelationId}");
             if (!_callbackMapper.TryRemove(ea.BasicProperties.CorrelationId, out var tcs))
                 return;
 
@@ -53,6 +55,8 @@ public class RabbitMqClient : IRabbitMqClient, IDisposable
         var props = _channel.CreateBasicProperties();
         props.CorrelationId = correlationId;
         props.ReplyTo = _replyQueueName;
+
+        Console.WriteLine($"Sending request to {queueName} with correlation ID: {correlationId}, ReplyTo: {_replyQueueName}");
 
         _channel.BasicPublish(exchange: "", routingKey: queueName, basicProperties: props, body: body);
 
