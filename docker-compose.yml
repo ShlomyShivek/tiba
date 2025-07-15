@@ -78,6 +78,11 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
+      - JWT_VALIDATE_ISSUER=false
+      - JWT_VALIDATE_AUDIENCE=false
+      - JWT_VALIDATE_LIFETIME=false
+      - JWT_VALIDATE_ISSUER_SIGNING_KEY=false
+      - JWT_REQUIRE_EXPIRATION_TIME=false
     restart: unless-stopped
     networks:
       - tiba-network

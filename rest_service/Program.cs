@@ -11,7 +11,7 @@ builder.Services
     .AddEndpointsApiExplorer()
     .AddSwaggerGen()
     .AddApplicationServices()
-    .AddJwtAuthentication()
+    .AddJwtAuthentication(builder.Configuration)
     .AddAuthorization()
     .AddExceptionHandling()
     .AddHealthCheck();

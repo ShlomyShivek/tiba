@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -30,19 +31,18 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services)
+    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                //TODO: this is a mock implementation, replace with actual JWT validation logic
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = false,
-                    ValidateIssuerSigningKey = false,
-                    RequireExpirationTime = false,
+                    ValidateIssuer = configuration.GetValue<bool>("JWT_VALIDATE_ISSUER"),
+                    ValidateAudience = configuration.GetValue<bool>("JWT_VALIDATE_AUDIENCE"),
+                    ValidateLifetime = configuration.GetValue<bool>("JWT_VALIDATE_LIFETIME"),
+                    ValidateIssuerSigningKey = configuration.GetValue<bool>("JWT_VALIDATE_ISSUER_SIGNING_KEY"),
+                    RequireExpirationTime = configuration.GetValue<bool>("JWT_REQUIRE_EXPIRATION_TIME"),
                     SignatureValidator = (token, parameters) =>
                     {
                         // Custom signature validation logic can be added here if needed
