@@ -22,7 +22,7 @@ public class RabbitMqClient : IRabbitMqClient, IDisposable
             Password = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "guest"
         };
 
-        _connection = factory.CreateConnection();
+        _connection = factory.CreateConnection("rest_service_client");
         _channel = _connection.CreateModel();
         
         //using direct reply-to pattern https://www.rabbitmq.com/docs/direct-reply-to

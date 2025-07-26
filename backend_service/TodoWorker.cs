@@ -36,7 +36,7 @@ public class TodoWorker : BackgroundService
 
         try
         {
-            _connection = factory.CreateConnection();
+            _connection = factory.CreateConnection("backend_service_client");
             _channel = _connection.CreateModel();
 
             // Declare dead letter exchange. exchange is required for dead letter queues
