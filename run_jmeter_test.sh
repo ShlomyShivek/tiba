@@ -1,0 +1,1 @@
+~/jmeter/bin/jmeter -n -t ~/repos/tiba/jmeter_test.jmx -l ./results.jtl -e -f -o ~/tmp/jmeter_output
