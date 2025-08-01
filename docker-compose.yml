@@ -57,9 +57,32 @@ services:
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
       - POSTGRES_CONNECTION_STRING=Host=postgres;Database=tiba_todos;Username=postgres;Password=postgres
+      - SERVICE_NAME=tiba-backend
     restart: unless-stopped
     networks:
       - tiba-network
+
+  backend-service2:
+    build:
+      context: .
+      dockerfile: backend_service/Dockerfile
+    container_name: tiba-backend2
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - POSTGRES_CONNECTION_STRING=Host=postgres;Database=tiba_todos;Username=postgres;Password=postgres
+      - SERVICE_NAME=tiba-backend2
+    restart: unless-stopped
+    networks:
+      - tiba-network
+
 
   rest-service:
     build:
