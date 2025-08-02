@@ -19,11 +19,14 @@ public class RabbitMqClient : IRabbitMqClient, IDisposable
         {
             HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost",
             UserName = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest",
-            Password = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "guest"
+            Password = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "guest",
+            RequestedConnectionTimeout = TimeSpan.FromSeconds(240)
         };
+        
 
         _connection = factory.CreateConnection("rest_service_client");
         _channel = _connection.CreateModel();
+
         
         //using direct reply-to pattern https://www.rabbitmq.com/docs/direct-reply-to
         _replyQueueName = "amq.rabbitmq.reply-to";
@@ -43,7 +46,7 @@ public class RabbitMqClient : IRabbitMqClient, IDisposable
         _channel.BasicConsume(consumer: consumer, queue: _replyQueueName, autoAck: true);
     }
 
-    public async Task<TResponse> SendRequestAsync<TRequest, TResponse>(TRequest request, string queueName, int timeoutMs = 30000)
+    public async Task<TResponse> SendRequestAsync<TRequest, TResponse>(TRequest request, string queueName, int timeoutMs = 240000)
     {
         var correlationId = Guid.NewGuid().ToString();
         var tcs = new TaskCompletionSource<string>();
@@ -56,7 +59,7 @@ public class RabbitMqClient : IRabbitMqClient, IDisposable
         props.CorrelationId = correlationId;
         props.ReplyTo = _replyQueueName;
 
-        Console.WriteLine($"Sending request to {queueName} with correlation ID: {correlationId}, ReplyTo: {_replyQueueName}");
+        Console.WriteLine($"Sending request to {queueName} with correlation ID: {correlationId}, ReplyTo: {_replyQueueName}, timeout: {timeoutMs}ms");
 
         _channel.BasicPublish(exchange: "", routingKey: queueName, basicProperties: props, body: body);
 

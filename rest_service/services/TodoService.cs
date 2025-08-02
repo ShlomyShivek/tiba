@@ -16,7 +16,7 @@ public class TodoService : ITodoService
     {
         var request = new GetTodosByUserIdRequest { UserId = userId };
         var response = await _rabbitMqClient.SendRequestAsync<GetTodosByUserIdRequest, GetTodosResponse>(
-            request, "todo.get_by_user", 30000);
+            request, "todo.get_by_user");
         
         if (!response.Success)
         {
@@ -30,7 +30,7 @@ public class TodoService : ITodoService
     {
         var request = new CreateTodoRequest { Todo = todo };
         var response = await _rabbitMqClient.SendRequestAsync<CreateTodoRequest, CreateTodoResponse>(
-            request, "todo.create", 30000);
+            request, "todo.create");
         
         if (!response.Success || response.CreatedTodo == null)
         {
