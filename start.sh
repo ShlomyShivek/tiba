@@ -74,7 +74,12 @@ print_step "📊 Checking container status..."
 docker-compose ps
 
 
+# overwrite pgbouncer.ini with the template
+print_step "🔄 Overwriting pgbouncer.ini with template..."
 cp pgbouncer_template.ini pgbouncer.ini
+
+# Reload pgbouncer configuration
+print_step "🔄 Reloading pgbouncer configuration..."
 psql -h localhost -p 6432 -U postgres pgbouncer -c "RELOAD;"
 
 
