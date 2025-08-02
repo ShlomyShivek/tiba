@@ -10,6 +10,7 @@ services:
       POSTGRES_DB: tiba_todos
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    command: postgres -c max_connections=250 -c shared_buffers=256MB -c effective_cache_size=1GB
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -41,13 +42,50 @@ services:
     networks:
       - tiba-network
 
+  pgbouncer:
+    image: pgbouncer/pgbouncer:latest
+    container_name: tiba-pgbouncer
+    ports:
+      - "6432:6432"
+    environment:
+      DATABASES_HOST: postgres
+      DATABASES_PORT: 5432
+      DATABASES_USER: postgres
+      DATABASES_PASSWORD: postgres
+      DATABASES_DBNAME: tiba_todos
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 25000
+      DEFAULT_POOL_SIZE: 500
+      MAX_DB_CONNECTIONS: 500
+      RESERVE_POOL_SIZE: 100
+      AUTH_TYPE: trust
+      SERVER_IDLE_TIMEOUT: 600
+      SERVER_LIFETIME: 3600
+      CLIENT_IDLE_TIMEOUT: 0
+      QUERY_TIMEOUT: 0
+      SERVER_CONNECT_TIMEOUT: 15
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
+      - ./userlist.txt:/etc/pgbouncer/userlist.txt
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 6432 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - tiba-network
+
   backend-service:
     build:
       context: .
       dockerfile: backend_service/Dockerfile
     container_name: tiba-backend
     depends_on:
-      postgres:
+      pgbouncer:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -56,7 +94,7 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
-      - POSTGRES_CONNECTION_STRING=Host=postgres;Database=tiba_todos;Username=postgres;Password=postgres
+      - POSTGRES_CONNECTION_STRING=Host=pgbouncer;Port=6432;Database=tiba_todos;Username=postgres;Password=postgres; #Timeout=600;Command Timeout=600
       - SERVICE_NAME=tiba-backend
     restart: unless-stopped
     networks:
@@ -68,7 +106,7 @@ services:
       dockerfile: backend_service/Dockerfile
     container_name: tiba-backend2
     depends_on:
-      postgres:
+      pgbouncer:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -77,13 +115,54 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
-      - POSTGRES_CONNECTION_STRING=Host=postgres;Database=tiba_todos;Username=postgres;Password=postgres
+      - POSTGRES_CONNECTION_STRING=Host=pgbouncer;Port=6432;Database=tiba_todos;Username=postgres;Password=postgres; #Timeout=600;Command Timeout=600
       - SERVICE_NAME=tiba-backend2
     restart: unless-stopped
     networks:
       - tiba-network
 
+  backend-service3:
+    build:
+      context: .
+      dockerfile: backend_service/Dockerfile
+    container_name: tiba-backend3
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - POSTGRES_CONNECTION_STRING=Host=pgbouncer;Port=6432;Database=tiba_todos;Username=postgres;Password=postgres; #Timeout=600;Command Timeout=600
+      - SERVICE_NAME=tiba-backend3
+    restart: unless-stopped
+    networks:
+      - tiba-network
 
+  backend-service4:
+    build:
+      context: .
+      dockerfile: backend_service/Dockerfile
+    container_name: tiba-backend4
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - POSTGRES_CONNECTION_STRING=Host=pgbouncer;Port=6432;Database=tiba_todos;Username=postgres;Password=postgres #;Timeout=600;Command Timeout=600
+      - SERVICE_NAME=tiba-backend4
+    restart: unless-stopped
+    networks:
+      - tiba-network
+  
   rest-service:
     build:
       context: .
