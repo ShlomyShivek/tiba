@@ -73,6 +73,20 @@ sleep 5
 print_step "📊 Checking container status..."
 docker-compose ps
 
+
+cp pgbouncer_template.ini pgbouncer.ini
+psql -h localhost -p 6432 -U postgres pgbouncer -c "RELOAD;"
+
+
+curl --location 'http://localhost:5000/todos' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwidXNlcklkIjoiMSIsIm5hbWUiOiJKb2huIERvZSIsImlhdCI6MTUxNjIzOTAyMn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c' \
+--header 'Content-Type: application/json' \
+--data '{
+    "title":"hello",
+    "isCompleted":false,
+    "userId":1
+}'
+
 # Display service URLs
 echo
 print_success "🎉 Tiba Microservices started successfully!"
