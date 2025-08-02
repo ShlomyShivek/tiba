@@ -4,196 +4,180 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a production-ready .NET 8.0 microservices Todo API application with three main components:
-
-- **rest_service**: JWT-authenticated REST API with health checks and robust error handling
-- **backend_service**: Background worker service with PostgreSQL persistence and retry logic
-- **shared**: Common library for models and messaging contracts
+This is a production-ready .NET 8.0 microservices Todo API application demonstrating asynchronous request-reply patterns with RabbitMQ messaging and PostgreSQL persistence. The system is designed for high-throughput scenarios with connection pooling via PgBouncer and horizontal scaling of worker services.
 
 ## Architecture
 
-### Microservices Communication Pattern
-- **Synchronous API**: REST endpoints for client communication
-- **Asynchronous Processing**: RabbitMQ request-reply pattern with dead letter queues
-- **Message Queues**: `todo.get_by_user`, `todo.create` with comprehensive retry logic
-- **Reply Pattern**: Uses `amq.rabbitmq.reply-to` with correlation IDs
-- **Error Handling**: 3-retry limit with dead letter queue routing and proper exception handling
+### Three-Tier Microservices Pattern
+- **REST Service** (`rest_service/`): JWT-authenticated HTTP API gateway with minimal logic
+- **Backend Service** (`backend_service/`): Horizontally scalable background workers for business logic processing (4 instances in docker-compose)
+- **Shared Library** (`shared/`): Common models and messaging contracts
 
-### Data Persistence
-- **Database**: PostgreSQL with Entity Framework Core Code First approach
-- **Repository Pattern**: `ITodoRepository` with full CRUD operations
-- **Auto-Migration**: Database schema created automatically on startup
-- **Connection**: Configurable via `POSTGRES_CONNECTION_STRING` environment variable
+### Request-Reply Communication Flow
+1. **HTTP Request** → REST API validates JWT and extracts user ID
+2. **Service Layer** → TodoService creates typed requests (`GetTodosByUserIdRequest`, `CreateTodoRequest`)
+3. **RabbitMQ Client** → Publishes to queues with correlation IDs using `amq.rabbitmq.reply-to` pattern
+4. **Background Workers** → Multiple TodoWorker instances consume from queues with scoped dependency injection
+5. **Repository Layer** → ITodoRepository executes operations via Entity Framework Core
+6. **Reply Queue** → Handler sends typed responses back via correlation ID matching
+7. **HTTP Response** → REST API returns deserialized results to client
 
-### Namespace Architecture
-
-All namespaces follow consistent capitalization standards:
-
-**REST Service**:
-- **Core**: `Tiba.Rest.Services` - Service implementations and interfaces
-- **Extensions**: `Tiba.Rest.Extensions` - Service registration and configuration extensions
-- **Exceptions**: `Tiba.Rest.Exceptions` - Custom exception types
-
-**Backend Service**:
-- **Core**: `Tiba.BackendService` - Main worker and service registration
-- **Data Access**: `Tiba.BackendService.Dal` - Repository patterns and Entity Framework
-- **Handlers**: `Tiba.BackendService.Handlers` - Message processing logic
-
-**Shared Library**:
-- **Models**: `Tiba.Shared.Model` - Domain entities (Todo, User)
-- **Messaging**: `Tiba.Shared.Messaging` - Request/response contracts and base classes
-
-**REST Service Features**:
-- Extension-based service registration (`ServiceCollectionExtensions`)
-- JWT authentication with configurable validation
-- Health checks at `/health` endpoint
-- Global exception handling with Problem Details
-- Swagger/OpenAPI documentation
-
-**Backend Service Features**:
-- Entity Framework Core with PostgreSQL
-- Repository pattern implementation
-- RabbitMQ message processing with scoped dependency injection
-- Dead letter queue configuration with retry logic
-- Background service with proper disposal patterns
-
-### Data Flow
-
-1. **HTTP Request** → REST API with JWT auth and health monitoring
-2. **Service Layer** → TodoService creates typed requests with validation
-3. **Message Queue** → RabbitMqClient sends requests with correlation IDs
-4. **Background Worker** → TodoWorker processes messages with scoped repositories
-5. **Database Operations** → Repository executes CRUD operations via Entity Framework
-6. **Response** → Handler returns results via RabbitMQ reply queues
-7. **HTTP Response** → REST API returns structured responses to client
-
-### Authentication & Authorization
-
-- **JWT Bearer Tokens**: Required for all endpoints
-- **Mock Validation**: Cryptographic validation disabled for development
-- **User Extraction**: Parses `sub` or `userId` claims from token
-- **User Scoping**: All operations filtered by authenticated user ID
+### High-Performance Infrastructure
+- **PgBouncer**: Transaction-level connection pooling (max 25k client connections, 500 DB connections)
+- **PostgreSQL**: High-concurrency configuration (250 max connections, optimized shared buffers)
+- **RabbitMQ**: Dead letter queues with 3-retry logic and durable message persistence
+- **Docker Scaling**: 4 backend service instances for load distribution
 
 ## Development Commands
 
-### Docker-Based Development (Recommended)
+### Docker-Based Development (Required)
 ```bash
-# Start all services with Docker Compose
+# Complete environment startup (builds .NET solution and starts all services)
 ./start.sh
 
 # Stop all services
 ./stop.sh
-# or: docker-compose down
-
-# View logs for all services
-docker-compose logs -f
-
-# View logs for specific service
-docker-compose logs -f backend-service
-docker-compose logs -f rest-service
 ```
 
-### Manual Development
+The start script performs:
+1. .NET solution build with `dotnet clean`, `dotnet restore`, `dotnet build --configuration Release`
+2. Docker Compose orchestration with health checks
+3. PgBouncer configuration reload
+4. API test execution with sample JWT token
+
+### Manual Development (Not Recommended)
 ```bash
 # Build entire solution
 dotnet build tiba.sln
 
-# Run backend service first (requires RabbitMQ)
+# Required infrastructure: PostgreSQL on :5432, RabbitMQ on :5672
+# Start backend workers first (4 instances recommended for load testing)
 cd backend_service && dotnet run
 
-# Run REST API (in separate terminal)
+# Start REST API
 cd rest_service && dotnet run
 ```
 
-### Development Workflow
+### Performance Testing
 ```bash
-# Restore all dependencies
-dotnet restore
-
-# Clean build artifacts
-dotnet clean
-
-# Run tests (when available)
-dotnet test
+# JMeter load testing (10,000 concurrent users)
+./run_jmeter_test.sh
 ```
 
-### Project Management
-```bash
-# Add package to specific project
-dotnet add backend_service package PackageName
+## Key Implementation Patterns
 
-# Add project reference
-dotnet add rest_service reference shared/shared.csproj
+### Extension-Based Service Registration
+The REST service uses fluent extension methods in `ServiceCollectionExtensions.cs`:
+```csharp
+builder.Services
+    .AddApplicationServices()      // TodoService, RabbitMqClient
+    .AddJwtAuthentication()        // Mock JWT validation
+    .AddExceptionHandling()        // Global exception middleware
+    .AddHealthCheck();             // Health endpoints
 ```
 
-## Key Dependencies
+### RabbitMQ Request-Reply Pattern
+- **Direct Reply-To**: Uses `amq.rabbitmq.reply-to` for efficient response routing
+- **Correlation IDs**: Guid-based message correlation between request and response
+- **Dead Letter Queues**: Automatic retry (3 attempts) with `x-dead-letter-exchange` configuration
+- **Timeout Handling**: Configurable timeouts (default 240 seconds) with cancellation tokens
+
+### Repository Pattern with Scoped Injection
+```csharp
+// Backend workers create scoped repositories per message
+using var scope = _serviceProvider.CreateScope();
+var todoRepository = scope.ServiceProvider.GetRequiredService<ITodoRepository>();
+```
+
+### Environment-Based Configuration
+- **POSTGRES_CONNECTION_STRING**: Database via PgBouncer (Host=pgbouncer;Port=6432;Database=tiba_todos;Username=postgres;Password=postgres)
+- **RABBITMQ_HOST/USER/PASSWORD**: Message broker connectivity
+- **JWT_VALIDATE_***: JWT validation flags (all disabled for development)
+- **SERVICE_NAME**: Unique identifier for connection tracking
+
+## Namespace Architecture
 
 **REST Service**:
-- Microsoft.AspNetCore.Authentication.JwtBearer (JWT auth)
-- RabbitMQ.Client (messaging)
-- Swashbuckle.AspNetCore (OpenAPI/Swagger)
+- `Tiba.Rest.Services`: Core service implementations (TodoService, RabbitMqClient, MockAuthService)
+- `Tiba.Rest.Extensions`: Fluent service registration extensions  
+- `Tiba.Rest.Exceptions`: Custom exception types and global handlers
 
 **Backend Service**:
-- Microsoft.Extensions.Hosting (background services)
-- RabbitMQ.Client (messaging)
+- `Tiba.BackendService`: TodoWorker background service
+- `Tiba.BackendService.Dal`: Repository pattern with Entity Framework (ITodoRepository, TodoDbContext)
+- `Tiba.BackendService.Handlers`: Message processing handlers (GetTodosHandler, CreateTodoHandler)
 
-## Architecture Notes
+**Shared Library**:
+- `Tiba.Shared.Model`: Domain entities (Todo, User)
+- `Tiba.Shared.Messaging`: Request/response contracts with BaseResponse inheritance
 
-### Current Implementation Status
-- **Data Layer**: Production-ready PostgreSQL with Entity Framework Core
-- **Security**: JWT parsing with configurable validation (mock mode for development)
-- **Error Handling**: Comprehensive exception handling with retry logic and dead letter queues
-- **Health Monitoring**: Health check endpoints with status reporting
-- **Configuration**: Environment-based configuration with Docker Compose orchestration
+## Service URLs and Testing
 
-### Dead Letter Queue Configuration
-- **Dead Letter Exchange**: `todo.deadletter` (direct type)
-- **Dead Letter Queues**: `todo.get_by_user.deadletter`, `todo.create.deadletter`
-- **Retry Logic**: Maximum 3 retries before sending to dead letter queue
-- **Queue Arguments**: `x-dead-letter-exchange`, `x-dead-letter-routing-key`, `x-max-retries`
+- **REST API**: http://localhost:5000
+- **Swagger Documentation**: http://localhost:5000/swagger  
+- **Health Check**: http://localhost:5000/health
+- **RabbitMQ Management**: http://localhost:15672 (guest/guest)
+- **PostgreSQL Direct**: localhost:5432 (postgres/postgres)
+- **PgBouncer**: localhost:6432 (transaction pooling)
 
+### JWT Testing
+Use `app.http` file with provided test token:
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwidXNlcklkIjoiMSIsIm5hbWUiOiJKb2huIERvZSIsImlhdCI6MTUxNjIzOTAyMn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+```
+Token contains: `userId: "1"`, extracted by MockAuthService for user scoping.
 
-### Messaging Contracts
-- **Base Response**: `BaseResponse` with `Success` and `ErrorMessage`
-- **Typed Requests**: `GetTodosByUserIdRequest`, `CreateTodoRequest`
-- **Typed Responses**: `GetTodosResponse`, `CreateTodoResponse`
-- **Inheritance**: All responses inherit from `BaseResponse`
+## Database Schema and Persistence
 
-### Development Dependencies
-- **Docker & Docker Compose**: Required for complete development environment
-- **PostgreSQL 15**: Database with persistent volumes
-- **RabbitMQ**: Message broker with management UI at localhost:15672
-- **Service URLs**: 
-  - REST API: localhost:5000
-  - Health Check: localhost:5000/health
-  - Swagger: localhost:5000/swagger
-  - PostgreSQL: localhost:5432
+### Entity Framework Code First
+- **Auto-Migration**: `EnsureCreatedAsync()` runs on backend service startup
+- **User Scoping**: All Todo operations filtered by authenticated user ID
+- **Repository Pattern**: Abstracted data access via ITodoRepository interface
 
-### Environment Configuration
-- **POSTGRES_CONNECTION_STRING**: Database connection (default: Host=localhost;Database=tiba_todos;Username=postgres;Password=postgres)
-- **RABBITMQ_HOST**: RabbitMQ hostname (default: localhost)
-- **RABBITMQ_USER/RABBITMQ_PASSWORD**: RabbitMQ credentials (default: guest/guest)
+### Connection Architecture
+```
+Client → REST API → RabbitMQ → Backend Workers → PgBouncer → PostgreSQL
+```
 
-### Extension Pattern Usage
-- **Service Registration**: Use `ServiceCollectionExtensions` for modular service configuration
-- **Method Chaining**: Services are registered using fluent builder pattern
-- **Separation of Concerns**: Each extension method handles specific functionality (Auth, Health, etc.)
+## Common Development Tasks
 
-### Entity Framework Patterns
-- **Repository Pattern**: Use `ITodoRepository` for data access abstraction
-- **Scoped Injection**: Repository injected per message processing scope
-- **Code First**: Database schema generated from entity models
-- **Auto-Migration**: Use `EnsureCreatedAsync()` for development database setup
+### Adding New Endpoints
+1. Create request/response contracts in `Tiba.Shared.Messaging`
+2. Implement handler in `Tiba.BackendService.Handlers` 
+3. Add queue consumer in `TodoWorker.cs`
+4. Add REST endpoint in `Program.cs` with JWT validation
 
-### Common Tasks
-- **Add New Endpoint**: Create contracts in `Tiba.Shared.Messaging`, implement handler in `Tiba.BackendService.Handlers`, add endpoint in REST service
-- **Database Changes**: Modify entity models in `Tiba.Shared.Model`, update repository interface and implementation
-- **Service Configuration**: Add extension methods to `ServiceCollectionExtensions` for new services
-- **Health Checks**: Extend `AddHealthCheck()` method with additional health check implementations
-- **Testing**: Use `app.http` file with provided JWT tokens for API testing
+### Scaling Backend Processing
+- Increase backend service replicas in `docker-compose.yml`
+- Each instance creates independent RabbitMQ consumers
+- PgBouncer handles connection pooling automatically
 
-### Known Issues & Technical Debt
-- JWT validation in mock mode for development (needs production implementation)
-- Console logging instead of structured logging framework
-- Missing comprehensive unit and integration tests
-- Health checks are basic (need actual database connectivity checks)
+### Message Queue Configuration
+- Main queues: `todo.get_by_user`, `todo.create`
+- Dead letter exchange: `todo.deadletter` (direct type)
+- Dead letter queues: `{queue_name}.deadletter`
+- Retry headers: `x-retry-count` for tracking failed attempts
+
+## Current Implementation Status
+
+### Production-Ready Features
+- Horizontal scaling with 4 backend worker instances
+- Transaction-level connection pooling via PgBouncer
+- Dead letter queue handling with retry logic
+- JWT authentication framework (mock validation for development)
+- Global exception handling with structured error responses
+- Health check endpoints for monitoring
+
+### Development-Mode Configurations  
+- JWT validation disabled (all JWT_VALIDATE_* flags set to false)
+- Console logging instead of structured logging
+- Auto-database creation instead of proper migrations
+- No unit tests or integration tests
+
+## Known Technical Debt
+
+1. **JWT Security**: Mock validation needs production implementation with proper issuer/audience validation
+2. **Logging**: Console logging should be replaced with structured logging (Serilog/NLog)
+3. **Testing**: Missing comprehensive unit and integration test suites
+4. **Health Checks**: Basic implementation needs actual database/RabbitMQ connectivity checks
+5. **Model Separation**: REST API uses domain entities directly instead of separate DTOs
